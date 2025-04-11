@@ -140,3 +140,5 @@ st.markdown(
     "#### ℹ️ Disclaimer\n"
     "_This tool uses the open Discogs API to provide estimated market values based on past sales and listings. "
     "Actual value can vary due to subjective grading, rare features, or collector demand._"
+)
+
