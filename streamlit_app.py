@@ -5,36 +5,37 @@ import requests
 DISCOGS_TOKEN = "ebpdNwknvWEvijLOpBRFWeIRVGOOJRrAJstkCYPr"
 HEADERS = {"User-Agent": "PressingValueChecker/1.0"}
 
-# Known runout override
+# Runout code override (hardcoded match)
 def get_override_by_runout(runout_matrix):
     code = runout_matrix.strip().lower()
     if code == "csv001re1":
         return {
             "title": "Circa Survive – Violent Waves",
             "year": 2012,
-            "thumb": "https://img.discogs.com/-4B3d6kIMTLFlhfVfI55gprwGLU=/fit-in/600x583/filters:strip_icc():format(jpeg):mode_rgb():quality(90)/discogs-images/R-3846915-1476303565-8924.jpeg.jpg",
             "resource_url": "https://api.discogs.com/releases/3846915",
             "id": 3846915
         }
     return None
 
-# Get details
+# Get pressing details including image
 def get_pressing_details(resource_url):
     try:
         r = requests.get(resource_url, headers=HEADERS).json()
         labels = ", ".join([label.get("name", "N/A") for label in r.get("labels", [])])
         catnos = ", ".join([label.get("catno", "—") for label in r.get("labels", [])])
+        image_url = r.get("images", [{}])[0].get("uri", "")
         return {
             "country": r.get("country", "N/A"),
             "released": r.get("released_formatted", "N/A"),
             "labels": labels or "N/A",
-            "catalog_numbers": catnos or "—"
+            "catalog_numbers": catnos or "—",
+            "image": image_url
         }
     except Exception as e:
         st.error(f"Pressing details error: {e}")
         return None
 
-# Get pricing
+# Get Discogs pricing data
 def get_discogs_price_stats(release_id):
     try:
         url = f"https://api.discogs.com/marketplace/stats/{release_id}"
@@ -50,7 +51,7 @@ def get_discogs_price_stats(release_id):
         st.error(f"Price fetch error: {e}")
         return None
 
-# Streamlit UI
+# Streamlit App UI
 st.set_page_config(page_title="Is This Pressing Valuable?", layout="centered")
 st.title("🎶 Is This Pressing Valuable?")
 st.subheader("Get a quick estimate based on your vinyl pressing.")
@@ -75,14 +76,15 @@ if st.button("🔍 Check Value"):
         if match:
             st.markdown("## ✅ Match Found by Runout Code")
             st.markdown(f"**{match['title']} ({match['year']})**")
-            if match.get("thumb"):
-                st.image(match["thumb"], width=200)
-            else:
-                st.info("🖼 No cover image available.")
-            st.markdown(f"[🔗 View on Discogs]({match['resource_url']})")
+            st.markdown(f"[🔗 View on Discogs](https://www.discogs.com/release/{match['id']})")
 
             details = get_pressing_details(match["resource_url"])
             if details:
+                if details.get("image"):
+                    st.image(details["image"], width=200)
+                else:
+                    st.info("🖼 No cover image available.")
+
                 st.markdown("### 🏷️ Pressing Details")
                 st.write(f"**Country:** {details['country']}")
                 st.write(f"**Label:** {details['labels']}")
@@ -103,13 +105,13 @@ if st.button("🔍 Check Value"):
             else:
                 st.info("No pricing data found.")
         else:
-            st.warning("⚠️ No match found for this runout. Please double-check the code or try a different title.")
+            st.warning("⚠️ No match found for this runout. Please double-check or try another pressing.")
     else:
         st.warning("Please fill in all required fields.")
 
 st.markdown("---")
 st.markdown(
     "#### ℹ️ Disclaimer\n"
-    "_This tool uses Discogs data to estimate vinyl value. Pressing accuracy may vary._"
+    "_This tool uses Discogs data to estimate vinyl value. Pressing accuracy and market pricing are approximate and may vary based on grading or rarity._"
 )
 
