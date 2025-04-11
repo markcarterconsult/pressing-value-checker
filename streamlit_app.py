@@ -4,12 +4,10 @@ import requests
 # Discogs API Token
 DISCOGS_TOKEN = "ebpdNwknvWEvijLOpBRFWeIRVGOOJRrAJstkCYPr"
 
-# Search Discogs for matching release
+# Function to search Discogs
 def search_discogs(artist, title):
     base_url = "https://api.discogs.com/database/search"
-    headers = {
-        "User-Agent": "PressingValueChecker/1.0"
-    }
+    headers = {"User-Agent": "PressingValueChecker/1.0"}
     params = {
         "artist": artist,
         "release_title": title,
@@ -36,6 +34,22 @@ def search_discogs(artist, title):
         print("Discogs API error:", e)
         return None
 
+# Function to get pricing estimate
+def get_discogs_price_estimate(resource_url):
+    try:
+        headers = {"User-Agent": "PressingValueChecker/1.0"}
+        response = requests.get(resource_url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        return {
+            "lowest_price": data.get("lowest_price"),
+            "num_for_sale": data.get("num_for_sale")
+        }
+    except Exception as e:
+        print("Price API error:", e)
+        return None
+
 
 # Streamlit UI
 st.set_page_config(page_title="Is This Pressing Valuable?", layout="centered")
@@ -59,20 +73,4 @@ runout_matrix = st.text_input("Runout Matrix / Etchings (dead wax)")
 # Submit Button
 if st.button("🔍 Check Value"):
     if name and email and record_title and artist_name:
-        st.markdown("---")
-        st.markdown("Searching Discogs...")
 
-        result = search_discogs(artist_name, record_title)
-
-        if result:
-            st.success(f"🎉 Found: **{result['title']} ({result['year']})**")
-            st.markdown(f"[🔗 View on Discogs]({result['discogs_url']})")
-
-            if result.get("thumb"):
-                st.image(result["thumb"], width=200)
-
-            st.info("💰 This pressing may be worth between **$25–$100**, depending on condition. (Simulated for now.)")
-        else:
-            st.warning("⚠️ No matching release found on Discogs. Try adjusting the title or artist.")
-    else:
-        st.warning("Please complete all required fields.")
