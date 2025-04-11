@@ -26,7 +26,8 @@ def search_discogs(artist, title):
                 "title": first_result.get("title"),
                 "year": first_result.get("year"),
                 "thumb": first_result.get("thumb"),
-                "discogs_url": first_result.get("resource_url")
+                "discogs_url": first_result.get("resource_url"),
+                "id": first_result.get("id")
             }
         else:
             return None
@@ -34,17 +35,21 @@ def search_discogs(artist, title):
         print("Discogs API error:", e)
         return None
 
-# Function to get pricing estimate
-def get_discogs_price_estimate(resource_url):
+# Function to get historical pricing stats from Discogs
+def get_discogs_price_stats(release_id):
     try:
         headers = {"User-Agent": "PressingValueChecker/1.0"}
-        response = requests.get(resource_url, headers=headers)
+        stats_url = f"https://api.discogs.com/marketplace/stats/{release_id}"
+        response = requests.get(stats_url, headers=headers)
         response.raise_for_status()
-        data = response.json()
+        stats = response.json()
 
         return {
-            "lowest_price": data.get("lowest_price"),
-            "num_for_sale": data.get("num_for_sale")
+            "lowest_price": stats["lowest_price"].get("value") if stats.get("lowest_price") else None,
+            "median_price": stats["median_price"].get("value") if stats.get("median_price") else None,
+            "highest_price": stats["highest_price"].get("value") if stats.get("highest_price") else None,
+            "num_for_sale": stats.get("num_for_sale"),
+            "sales": stats.get("sales")
         }
     except Exception as e:
         print("Price API error:", e)
@@ -74,7 +79,7 @@ runout_matrix = st.text_input("Runout Matrix / Etchings (dead wax)")
 if st.button("🔍 Check Value"):
     if name and email and record_title and artist_name:
         st.markdown("---")
-        st.markdown("Searching Discogs...")
+        st.markdown("🔎 Searching Discogs...")
 
         result = search_discogs(artist_name, record_title)
 
@@ -85,17 +90,22 @@ if st.button("🔍 Check Value"):
             if result.get("thumb"):
                 st.image(result["thumb"], width=200)
 
-            price_data = get_discogs_price_estimate(result["discogs_url"])
+            # Pricing stats
+            price_data = get_discogs_price_stats(result["id"])
             if price_data:
-                low = price_data.get("lowest_price")
-                qty = price_data.get("num_for_sale")
-                if low:
-                    st.info(f"💰 Lowest current listing on Discogs: **${low:.2f}**")
-                if qty is not None:
-                    st.write(f"🛒 Number of copies for sale: {qty}")
+                st.markdown("### 💵 Estimated Value Range")
+                if price_data.get("lowest_price"):
+                    st.write(f"🔻 **Lowest Sale Price:** ${price_data['lowest_price']:.2f}")
+                if price_data.get("median_price"):
+                    st.write(f"⚖️ **Median Sale Price:** ${price_data['median_price']:.2f}")
+                if price_data.get("highest_price"):
+                    st.write(f"🔺 **Highest Sale Price:** ${price_data['highest_price']:.2f}")
+                if price_data.get("sales") is not None:
+                    st.write(f"📈 **Total Sales Recorded:** {price_data['sales']}")
+                if price_data.get("num_for_sale") is not None:
+                    st.write(f"🛒 **Currently For Sale:** {price_data['num_for_sale']} listings")
             else:
-                st.warning("⚠️ Couldn't fetch pricing info.")
-
+                st.warning("⚠️ No price stats available for this release.")
         else:
             st.warning("⚠️ No matching release found on Discogs. Try adjusting the title or artist.")
     else:
