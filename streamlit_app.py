@@ -5,7 +5,7 @@ import requests
 DISCOGS_TOKEN = "ebpdNwknvWEvijLOpBRFWeIRVGOOJRrAJstkCYPr"
 HEADERS = {"User-Agent": "PressingValueChecker/1.0"}
 
-# Runout code override (hardcoded match)
+# Runout override
 def get_override_by_runout(runout_matrix):
     code = runout_matrix.strip().lower()
     if code == "csv001re1":
@@ -17,7 +17,7 @@ def get_override_by_runout(runout_matrix):
         }
     return None
 
-# Get pressing details including image
+# Pressing details incl. image
 def get_pressing_details(resource_url):
     try:
         r = requests.get(resource_url, headers=HEADERS).json()
@@ -35,7 +35,7 @@ def get_pressing_details(resource_url):
         st.error(f"Pressing details error: {e}")
         return None
 
-# Get Discogs pricing data
+# Pricing data
 def get_discogs_price_stats(release_id):
     try:
         url = f"https://api.discogs.com/marketplace/stats/{release_id}"
@@ -51,16 +51,18 @@ def get_discogs_price_stats(release_id):
         st.error(f"Price fetch error: {e}")
         return None
 
-# Streamlit App UI
+# UI
 st.set_page_config(page_title="Is This Pressing Valuable?", layout="centered")
 st.title("🎶 Is This Pressing Valuable?")
 st.subheader("Get a quick estimate based on your vinyl pressing.")
 
+# Lead Info
 st.markdown("### 👤 Your Info")
 name = st.text_input("Full Name")
 email = st.text_input("Email Address")
 phone = st.text_input("Phone Number")
 
+# Record Info
 st.markdown("### 💿 Record Info")
 record_title = st.text_input("Record Title")
 artist_name = st.text_input("Artist Name")
@@ -68,7 +70,9 @@ format_type = st.selectbox("Format", ["Vinyl", "CD", "Cassette"])
 vinyl_condition = st.selectbox("Media Condition", ["Mint", "Near Mint", "VG+", "VG", "Good", "Poor"])
 sleeve_condition = st.selectbox("Sleeve Condition", ["Mint", "Near Mint", "VG+", "VG", "Good", "Poor"])
 runout_matrix = st.text_input("Runout Matrix / Etchings")
+notes = st.text_area("Additional Notes (e.g. colored vinyl, promo stamp, misprint)", placeholder="Optional...")
 
+# Search Action
 if st.button("🔍 Check Value"):
     if name and email and record_title and artist_name and runout_matrix:
         match = get_override_by_runout(runout_matrix)
@@ -104,14 +108,22 @@ if st.button("🔍 Check Value"):
                 st.write(f"🛒 For Sale: {stats['num_for_sale']} listings")
             else:
                 st.info("No pricing data found.")
+
+            # Show notes if provided
+            if notes:
+                st.markdown("### 📝 Notes")
+                st.write(notes)
+
         else:
             st.warning("⚠️ No match found for this runout. Please double-check or try another pressing.")
     else:
         st.warning("Please fill in all required fields.")
 
+# Footer Disclaimer
 st.markdown("---")
 st.markdown(
     "#### ℹ️ Disclaimer\n"
     "_This tool uses Discogs data to estimate vinyl value. Pressing accuracy and market pricing are approximate and may vary based on grading or rarity._"
 )
+
 
