@@ -33,10 +33,10 @@ def search_discogs(artist, title, format_type):
         else:
             return None
     except Exception as e:
-        print("Discogs API error:", e)
+        st.error(f"Discogs API search error: {e}")
         return None
 
-# Function to get historical pricing stats from Discogs
+# Function to get historical pricing stats
 def get_discogs_price_stats(release_id):
     try:
         headers = {"User-Agent": "PressingValueChecker/1.0"}
@@ -53,10 +53,10 @@ def get_discogs_price_stats(release_id):
             "sales": stats.get("sales")
         }
     except Exception as e:
-        print("Price API error:", e)
+        st.error(f"Discogs pricing error: {e}")
         return None
 
-# Function to fetch pressing details from release metadata
+# Function to get pressing metadata
 def get_pressing_details(resource_url):
     try:
         headers = {"User-Agent": "PressingValueChecker/1.0"}
@@ -64,18 +64,17 @@ def get_pressing_details(resource_url):
         response.raise_for_status()
         data = response.json()
 
-        labels = ", ".join([label['name'] for label in data.get("labels", [])])
-        catnos = ", ".join([label['catno'] for label in data.get("labels", [])])
+        labels = ", ".join([label.get("name", "N/A") for label in data.get("labels", [])])
+        catnos = ", ".join([label.get("catno", "N/A") for label in data.get("labels", [])])
         return {
             "country": data.get("country", "N/A"),
             "released": data.get("released_formatted", "N/A"),
-            "labels": labels,
-            "catalog_numbers": catnos
+            "labels": labels or "N/A",
+            "catalog_numbers": catnos or "N/A"
         }
     except Exception as e:
-        print("Error getting pressing details:", e)
+        st.error(f"Error fetching pressing details: {e}")
         return None
-
 
 # Streamlit UI
 st.set_page_config(page_title="Is This Pressing Valuable?", layout="centered")
@@ -94,50 +93,4 @@ record_title = st.text_input("Record Title")
 artist_name = st.text_input("Artist Name")
 format_type = st.selectbox("Format", ["Vinyl", "CD", "Cassette"])
 vinyl_condition = st.selectbox("Media Condition", ["Mint (M)", "Near Mint (NM or M-)", "Very Good Plus (VG+)", "Very Good (VG)", "Good (G)", "Poor (P)"])
-sleeve_condition = st.selectbox("Sleeve/Case Condition", ["Mint (M)", "Near Mint (NM or M-)", "Very Good Plus (VG+)", "Very Good (VG)", "Good (G)", "Poor (P)"])
-runout_matrix = st.text_input("Runout Matrix / Etchings (for vinyl only)")
-
-# Submit Button
-if st.button("🔍 Check Value"):
-    if name and email and record_title and artist_name:
-        st.markdown("---")
-        st.markdown("🔎 Searching Discogs...")
-
-        result = search_discogs(artist_name, record_title, format_type)
-
-        if result:
-            st.success(f"🎉 Found: **{result['title']} ({result['year']})**")
-            st.markdown(f"[🔗 View on Discogs]({result['discogs_url']})")
-
-            if result.get("thumb"):
-                st.image(result["thumb"], width=200)
-
-            # 📇 Pressing Details
-            pressing = get_pressing_details(result["discogs_url"])
-            if pressing:
-                st.markdown("### 📇 Pressing Details")
-                st.write(f"**Country:** {pressing['country']}")
-                st.write(f"**Label:** {pressing['labels']}")
-                st.write(f"**Catalog #:** {pressing['catalog_numbers']}")
-                st.write(f"**Released:** {pressing['released']}")
-
-            # 💵 Pricing stats
-            price_data = get_discogs_price_stats(result["id"])
-            if price_data:
-                st.markdown("### 💵 Estimated Value Range")
-                if price_data.get("lowest_price"):
-                    st.write(f"🔻 **Lowest Sale Price:** ${price_data['lowest_price']:.2f}")
-                if price_data.get("median_price"):
-                    st.write(f"⚖️ **Median Sale Price:** ${price_data['median_price']:.2f}")
-                if price_data.get("highest_price"):
-                    st.write(f"🔺 **Highest Sale Price:** ${price_data['highest_price']:.2f}")
-                if price_data.get("sales") is not None:
-                    st.write(f"📈 **Total Sales Recorded:** {price_data['sales']}")
-                if price_data.get("num_for_sale") is not None:
-                    st.write(f"🛒 **Currently For Sale:** {price_data['num_for_sale']} listings")
-            else:
-                st.warning("⚠️ No price stats available for this release.")
-        else:
-            st.warning("⚠️ No matching release found on Discogs. Try adjusting the title or artist.")
-    else:
-        st.warning("Please complete all required fields.")
+sleeve_condition = st.selectbox("Sleeve/Case_
