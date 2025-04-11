@@ -88,50 +88,48 @@ sleeve_condition = st.selectbox("Sleeve/Case Condition", ["Mint (M)", "Near Mint
 runout_matrix = st.text_input("Runout Matrix / Etchings (for vinyl only)")
 notes = st.text_area("Additional Notes (e.g. colored vinyl, promo stamp, misprint)", placeholder="Optional...")
 
-# Trigger Discogs lookup
-matches = []
+# Run Search
 if st.button("🔍 Search Pressings"):
     if name and email and record_title and artist_name:
         matches = get_discogs_matches(artist_name, record_title, format_type)
 
-if matches:
-    st.markdown("### 🔘 Select Your Pressing")
-    options = [f"{m['title']} ({m['year']})" for m in matches]
+        if matches:
+            st.markdown("## 📦 Top Matching Pressings")
+            for i, match in enumerate(matches):
+                st.markdown(f"---\n### 🔹 {match['title']} ({match['year']})")
 
-    selected = st.radio("Choose one to see value estimate:", options)
+                if match.get("thumb"):
+                    st.image(match["thumb"], width=200)
 
-    match = next((m for m in matches if f"{m['title']} ({m['year']})" == selected), None)
+                st.markdown(f"[🔗 View on Discogs]({match['resource_url']})")
 
-    if match:
-        st.success(f"✅ You selected: {match['title']} ({match['year']})")
-        st.markdown(f"[🔗 View on Discogs]({match['resource_url']})")
+                # Pressing info
+                details = get_pressing_details(match["resource_url"])
+                if details:
+                    st.markdown("#### 🏷️ Pressing Details")
+                    st.write(f"**Country:** {details['country']}")
+                    st.write(f"**Label:** {details['labels']}")
+                    st.write(f"**Catalog #:** {details['catalog_numbers']}")
+                    st.write(f"**Released:** {details['released']}")
 
-        if match.get("thumb"):
-            st.image(match["thumb"], width=200)
-
-        # Pressing details
-        details = get_pressing_details(match["resource_url"])
-        if details:
-            st.markdown("### 📇 Pressing Details")
-            st.write(f"**Country:** {details['country']}")
-            st.write(f"**Label:** {details['labels']}")
-            st.write(f"**Catalog #:** {details['catalog_numbers']}")
-            st.write(f"**Released:** {details['released']}")
-
-        # Pricing stats
-        stats = get_discogs_price_stats(match["id"])
-        if stats:
-            st.markdown("### 💵 Estimated Value Range")
-            if stats.get("lowest_price"):
-                st.write(f"🔻 **Lowest Sale Price:** ${stats['lowest_price']:.2f}")
-            if stats.get("median_price"):
-                st.write(f"⚖️ **Median Sale Price:** ${stats['median_price']:.2f}")
-            if stats.get("highest_price"):
-                st.write(f"🔺 **Highest Sale Price:** ${stats['highest_price']:.2f}")
-            if stats.get("sales") is not None:
-                st.write(f"📈 **Total Sales Recorded:** {stats['sales']}")
-            if stats.get("num_for_sale") is not None:
-                st.write(f"🛒 **Currently For Sale:** {stats['num_for_sale']} listings")
+                # Pricing
+                stats = get_discogs_price_stats(match["id"])
+                if stats:
+                    st.markdown("#### 💰 Estimated Value")
+                    if stats.get("lowest_price"):
+                        st.write(f"🔻 **Lowest Sale Price:** ${stats['lowest_price']:.2f}")
+                    if stats.get("median_price"):
+                        st.write(f"⚖️ **Median Sale Price:** ${stats['median_price']:.2f}")
+                    if stats.get("highest_price"):
+                        st.write(f"🔺 **Highest Sale Price:** ${stats['highest_price']:.2f}")
+                    if stats.get("sales") is not None:
+                        st.write(f"📈 **Total Sales Recorded:** {stats['sales']}")
+                    if stats.get("num_for_sale") is not None:
+                        st.write(f"🛒 **Currently For Sale:** {stats['num_for_sale']} listings")
+        else:
+            st.warning("No matching pressings found. Try a simpler search.")
+    else:
+        st.warning("Please complete all required fields.")
 
 # Disclaimer
 st.markdown("---")
