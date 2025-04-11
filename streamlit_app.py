@@ -5,12 +5,13 @@ import requests
 DISCOGS_TOKEN = "ebpdNwknvWEvijLOpBRFWeIRVGOOJRrAJstkCYPr"
 
 # Function to search Discogs
-def search_discogs(artist, title):
+def search_discogs(artist, title, format_type):
     base_url = "https://api.discogs.com/database/search"
     headers = {"User-Agent": "PressingValueChecker/1.0"}
     params = {
         "artist": artist,
         "release_title": title,
+        "format": format_type,
         "type": "release",
         "token": DISCOGS_TOKEN
     }
@@ -59,7 +60,7 @@ def get_discogs_price_stats(release_id):
 # Streamlit UI
 st.set_page_config(page_title="Is This Pressing Valuable?", layout="centered")
 st.title("🎶 Is This Pressing Valuable?")
-st.subheader("Get a quick estimate based on your vinyl pressing details.")
+st.subheader("Get a quick estimate based on your physical media pressing.")
 
 # Lead Info
 st.markdown("### 👤 Your Info")
@@ -68,12 +69,13 @@ email = st.text_input("Email Address")
 phone = st.text_input("Phone Number")
 
 # Record Info
-st.markdown("### 💿 Record Info")
+st.markdown("### 💿 Item Info")
 record_title = st.text_input("Record Title")
 artist_name = st.text_input("Artist Name")
-vinyl_condition = st.selectbox("Vinyl Condition", ["Mint (M)", "Near Mint (NM or M-)", "Very Good Plus (VG+)", "Very Good (VG)", "Good (G)", "Poor (P)"])
-sleeve_condition = st.selectbox("Sleeve Condition", ["Mint (M)", "Near Mint (NM or M-)", "Very Good Plus (VG+)", "Very Good (VG)", "Good (G)", "Poor (P)"])
-runout_matrix = st.text_input("Runout Matrix / Etchings (dead wax)")
+format_type = st.selectbox("Format", ["Vinyl", "CD", "Cassette"])
+vinyl_condition = st.selectbox("Media Condition", ["Mint (M)", "Near Mint (NM or M-)", "Very Good Plus (VG+)", "Very Good (VG)", "Good (G)", "Poor (P)"])
+sleeve_condition = st.selectbox("Sleeve/Case Condition", ["Mint (M)", "Near Mint (NM or M-)", "Very Good Plus (VG+)", "Very Good (VG)", "Good (G)", "Poor (P)"])
+runout_matrix = st.text_input("Runout Matrix / Etchings (for vinyl only)")
 
 # Submit Button
 if st.button("🔍 Check Value"):
@@ -81,7 +83,7 @@ if st.button("🔍 Check Value"):
         st.markdown("---")
         st.markdown("🔎 Searching Discogs...")
 
-        result = search_discogs(artist_name, record_title)
+        result = search_discogs(artist_name, record_title, format_type)
 
         if result:
             st.success(f"🎉 Found: **{result['title']} ({result['year']})**")
