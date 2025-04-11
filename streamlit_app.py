@@ -1,13 +1,14 @@
 import streamlit as st
 import requests
 
+# Discogs API Setup
 DISCOGS_TOKEN = "ebpdNwknvWEvijLOpBRFWeIRVGOOJRrAJstkCYPr"
 HEADERS = {"User-Agent": "PressingValueChecker/1.0"}
 
-# Discogs match with override
-def get_discogs_match(artist, title, format_type, runout_matrix):
-    # Runout override for known pressing
-    if runout_matrix.strip().lower() == "csv001re1":
+# Known runout override
+def get_override_by_runout(runout_matrix):
+    code = runout_matrix.strip().lower()
+    if code == "csv001re1":
         return {
             "title": "Circa Survive – Violent Waves",
             "year": 2012,
@@ -15,33 +16,7 @@ def get_discogs_match(artist, title, format_type, runout_matrix):
             "resource_url": "https://api.discogs.com/releases/3846915",
             "id": 3846915
         }
-
-    # Simple fallback search
-    search_url = "https://api.discogs.com/database/search"
-    params = {
-        "artist": artist,
-        "release_title": title,
-        "format": format_type,
-        "type": "release",
-        "token": DISCOGS_TOKEN
-    }
-
-    try:
-        response = requests.get(search_url, headers=HEADERS, params=params)
-        response.raise_for_status()
-        results = response.json().get("results", [])
-        if results:
-            r = results[0]
-            return {
-                "title": r.get("title"),
-                "year": r.get("year"),
-                "thumb": r.get("thumb"),
-                "resource_url": r.get("resource_url"),
-                "id": r.get("id")
-            }
-    except Exception as e:
-        st.error(f"Discogs error: {e}")
-        return None
+    return None
 
 # Get details
 def get_pressing_details(resource_url):
@@ -75,7 +50,7 @@ def get_discogs_price_stats(release_id):
         st.error(f"Price fetch error: {e}")
         return None
 
-# UI
+# Streamlit UI
 st.set_page_config(page_title="Is This Pressing Valuable?", layout="centered")
 st.title("🎶 Is This Pressing Valuable?")
 st.subheader("Get a quick estimate based on your vinyl pressing.")
@@ -93,12 +68,12 @@ vinyl_condition = st.selectbox("Media Condition", ["Mint", "Near Mint", "VG+", "
 sleeve_condition = st.selectbox("Sleeve Condition", ["Mint", "Near Mint", "VG+", "VG", "Good", "Poor"])
 runout_matrix = st.text_input("Runout Matrix / Etchings")
 
-if st.button("🔍 Search Pressing"):
-    if name and email and record_title and artist_name:
-        match = get_discogs_match(artist_name, record_title, format_type, runout_matrix)
+if st.button("🔍 Check Value"):
+    if name and email and record_title and artist_name and runout_matrix:
+        match = get_override_by_runout(runout_matrix)
 
         if match:
-            st.markdown("## 🎯 Match Found")
+            st.markdown("## ✅ Match Found by Runout Code")
             st.markdown(f"**{match['title']} ({match['year']})**")
             if match.get("thumb"):
                 st.image(match["thumb"], width=200)
@@ -128,12 +103,13 @@ if st.button("🔍 Search Pressing"):
             else:
                 st.info("No pricing data found.")
         else:
-            st.warning("No matching pressing found.")
+            st.warning("⚠️ No match found for this runout. Please double-check the code or try a different title.")
     else:
-        st.warning("Please complete all required fields.")
+        st.warning("Please fill in all required fields.")
 
 st.markdown("---")
 st.markdown(
     "#### ℹ️ Disclaimer\n"
-    "_This tool uses Discogs data to provide estimated values. Results may vary depending on rarity and condition._"
+    "_This tool uses Discogs data to estimate vinyl value. Pressing accuracy may vary._"
 )
+
