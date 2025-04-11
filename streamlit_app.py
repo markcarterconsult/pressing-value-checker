@@ -73,4 +73,30 @@ runout_matrix = st.text_input("Runout Matrix / Etchings (dead wax)")
 # Submit Button
 if st.button("🔍 Check Value"):
     if name and email and record_title and artist_name:
+        st.markdown("---")
+        st.markdown("Searching Discogs...")
 
+        result = search_discogs(artist_name, record_title)
+
+        if result:
+            st.success(f"🎉 Found: **{result['title']} ({result['year']})**")
+            st.markdown(f"[🔗 View on Discogs]({result['discogs_url']})")
+
+            if result.get("thumb"):
+                st.image(result["thumb"], width=200)
+
+            price_data = get_discogs_price_estimate(result["discogs_url"])
+            if price_data:
+                low = price_data.get("lowest_price")
+                qty = price_data.get("num_for_sale")
+                if low:
+                    st.info(f"💰 Lowest current listing on Discogs: **${low:.2f}**")
+                if qty is not None:
+                    st.write(f"🛒 Number of copies for sale: {qty}")
+            else:
+                st.warning("⚠️ Couldn't fetch pricing info.")
+
+        else:
+            st.warning("⚠️ No matching release found on Discogs. Try adjusting the title or artist.")
+    else:
+        st.warning("Please complete all required fields.")
