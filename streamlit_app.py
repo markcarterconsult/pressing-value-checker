@@ -56,6 +56,26 @@ def get_discogs_price_stats(release_id):
         print("Price API error:", e)
         return None
 
+# Function to fetch pressing details from release metadata
+def get_pressing_details(resource_url):
+    try:
+        headers = {"User-Agent": "PressingValueChecker/1.0"}
+        response = requests.get(resource_url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        labels = ", ".join([label['name'] for label in data.get("labels", [])])
+        catnos = ", ".join([label['catno'] for label in data.get("labels", [])])
+        return {
+            "country": data.get("country", "N/A"),
+            "released": data.get("released_formatted", "N/A"),
+            "labels": labels,
+            "catalog_numbers": catnos
+        }
+    except Exception as e:
+        print("Error getting pressing details:", e)
+        return None
+
 
 # Streamlit UI
 st.set_page_config(page_title="Is This Pressing Valuable?", layout="centered")
@@ -92,7 +112,16 @@ if st.button("🔍 Check Value"):
             if result.get("thumb"):
                 st.image(result["thumb"], width=200)
 
-            # Pricing stats
+            # 📇 Pressing Details
+            pressing = get_pressing_details(result["discogs_url"])
+            if pressing:
+                st.markdown("### 📇 Pressing Details")
+                st.write(f"**Country:** {pressing['country']}")
+                st.write(f"**Label:** {pressing['labels']}")
+                st.write(f"**Catalog #:** {pressing['catalog_numbers']}")
+                st.write(f"**Released:** {pressing['released']}")
+
+            # 💵 Pricing stats
             price_data = get_discogs_price_stats(result["id"])
             if price_data:
                 st.markdown("### 💵 Estimated Value Range")
