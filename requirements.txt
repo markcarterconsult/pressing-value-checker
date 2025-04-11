@@ -1,10 +1,2 @@
-def get_price_stats(resource_url):
-    response = requests.get(resource_url, headers={"User-Agent": "PressingValueChecker/1.0"})
-    data = response.json()
-
-    if "lowest_price" in data or "num_for_sale" in data:
-        return {
-            "lowest_price": data.get("lowest_price"),
-            "num_for_sale": data.get("num_for_sale")
-        }
-    return None
+streamlit
+requests
