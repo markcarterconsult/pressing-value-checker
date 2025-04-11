@@ -49,4 +49,17 @@ if st.button("🔍 Check Value"):
                 if price_data.get("num_for_sale") is not None:
                     st.write(f"🛒 **Currently For Sale:** {price_data['num_for_sale']} listings")
             else:
-                st.warning
+                st.warning("⚠️ No price stats available for this release.")
+        else:
+            st.warning("⚠️ No matching release found on Discogs. Try adjusting the title or artist.")
+    else:
+        st.warning("Please complete all required fields.")
+
+# Disclaimer at bottom of the app
+st.markdown("---")
+st.markdown(
+    "#### ℹ️ Disclaimer\n"
+    "_This tool uses the open Discogs API to provide estimated market values based on past sales and listings. "
+    "Actual value can vary due to subjective grading, rare features, or collector demand. "
+    "Always consult a professional appraiser or buyer for official valuations._"
+)
