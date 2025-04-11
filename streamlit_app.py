@@ -72,7 +72,7 @@ st.set_page_config(page_title="Is This Pressing Valuable?", layout="centered")
 st.title("🎶 Is This Pressing Valuable?")
 st.subheader("Get a quick estimate based on your physical media pressing.")
 
-# User Info
+# Lead Info
 st.markdown("### 👤 Your Info")
 name = st.text_input("Full Name")
 email = st.text_input("Email Address")
@@ -86,24 +86,30 @@ format_type = st.selectbox("Format", ["Vinyl", "CD", "Cassette"])
 vinyl_condition = st.selectbox("Media Condition", ["Mint (M)", "Near Mint (NM or M-)", "Very Good Plus (VG+)", "Very Good (VG)", "Good (G)", "Poor (P)"])
 sleeve_condition = st.selectbox("Sleeve/Case Condition", ["Mint (M)", "Near Mint (NM or M-)", "Very Good Plus (VG+)", "Very Good (VG)", "Good (G)", "Poor (P)"])
 runout_matrix = st.text_input("Runout Matrix / Etchings (for vinyl only)")
-notes = st.text_area("Additional Notes", placeholder="Optional...")
+notes = st.text_area("Additional Notes (e.g. colored vinyl, promo stamp, misprint)", placeholder="Optional...")
 
-# Button
+# Run Search
 if st.button("🔍 Search Pressings"):
     if name and email and record_title and artist_name:
         matches = get_discogs_matches(artist_name, record_title, format_type)
 
         if matches:
             st.markdown("### 🔘 Select Your Pressing")
+
             for i, match in enumerate(matches):
                 st.markdown(f"**{i+1}. {match['title']} ({match['year']})**")
                 if match["thumb"]:
                     st.image(match["thumb"], width=150)
 
-            selected = st.radio(
-                "Choose one to see value estimate:", [f"{m['title']} ({m['year']})" for m in matches]
-            )
-            match = next(m for m in matches if f"{m['title']} ({m['year']})" == selected)
+            options = [f"{m['title']} ({m['year']})" for m in matches]
+
+            if "selected_match" not in st.session_state:
+                st.session_state.selected_match = options[0]
+
+            selected = st.radio("Choose one to see value estimate:", options, key="match_selector")
+            st.session_state.selected_match = selected
+
+            match = next(m for m in matches if f"{m['title']} ({m['year']})" == st.session_state.selected_match)
 
             st.success(f"✅ You selected: {match['title']} ({match['year']})")
             st.markdown(f"[🔗 View on Discogs]({match['resource_url']})")
@@ -141,4 +147,3 @@ st.markdown(
     "_This tool uses the open Discogs API to provide estimated market values based on past sales and listings. "
     "Actual value can vary due to subjective grading, rare features, or collector demand._"
 )
-
