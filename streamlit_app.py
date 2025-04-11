@@ -88,57 +88,50 @@ sleeve_condition = st.selectbox("Sleeve/Case Condition", ["Mint (M)", "Near Mint
 runout_matrix = st.text_input("Runout Matrix / Etchings (for vinyl only)")
 notes = st.text_area("Additional Notes (e.g. colored vinyl, promo stamp, misprint)", placeholder="Optional...")
 
-# Run Search
+# Trigger Discogs lookup
+matches = []
 if st.button("🔍 Search Pressings"):
     if name and email and record_title and artist_name:
         matches = get_discogs_matches(artist_name, record_title, format_type)
 
-        if matches:
-            st.markdown("### 🔘 Select Your Pressing")
+if matches:
+    st.markdown("### 🔘 Select Your Pressing")
+    options = [f"{m['title']} ({m['year']})" for m in matches]
 
-            for i, match in enumerate(matches):
-                st.markdown(f"**{i+1}. {match['title']} ({match['year']})**")
-                if match["thumb"]:
-                    st.image(match["thumb"], width=150)
+    selected = st.radio("Choose one to see value estimate:", options)
 
-            options = [f"{m['title']} ({m['year']})" for m in matches]
+    match = next((m for m in matches if f"{m['title']} ({m['year']})" == selected), None)
 
-            if "selected_match" not in st.session_state:
-                st.session_state.selected_match = options[0]
+    if match:
+        st.success(f"✅ You selected: {match['title']} ({match['year']})")
+        st.markdown(f"[🔗 View on Discogs]({match['resource_url']})")
 
-            selected = st.radio("Choose one to see value estimate:", options, key="match_selector")
-            st.session_state.selected_match = selected
+        if match.get("thumb"):
+            st.image(match["thumb"], width=200)
 
-            match = next(m for m in matches if f"{m['title']} ({m['year']})" == st.session_state.selected_match)
+        # Pressing details
+        details = get_pressing_details(match["resource_url"])
+        if details:
+            st.markdown("### 📇 Pressing Details")
+            st.write(f"**Country:** {details['country']}")
+            st.write(f"**Label:** {details['labels']}")
+            st.write(f"**Catalog #:** {details['catalog_numbers']}")
+            st.write(f"**Released:** {details['released']}")
 
-            st.success(f"✅ You selected: {match['title']} ({match['year']})")
-            st.markdown(f"[🔗 View on Discogs]({match['resource_url']})")
-
-            details = get_pressing_details(match["resource_url"])
-            if details:
-                st.markdown("### 📇 Pressing Details")
-                st.write(f"**Country:** {details['country']}")
-                st.write(f"**Label:** {details['labels']}")
-                st.write(f"**Catalog #:** {details['catalog_numbers']}")
-                st.write(f"**Released:** {details['released']}")
-
-            stats = get_discogs_price_stats(match["id"])
-            if stats:
-                st.markdown("### 💵 Estimated Value Range")
-                if stats.get("lowest_price"):
-                    st.write(f"🔻 **Lowest Sale Price:** ${stats['lowest_price']:.2f}")
-                if stats.get("median_price"):
-                    st.write(f"⚖️ **Median Sale Price:** ${stats['median_price']:.2f}")
-                if stats.get("highest_price"):
-                    st.write(f"🔺 **Highest Sale Price:** ${stats['highest_price']:.2f}")
-                if stats.get("sales") is not None:
-                    st.write(f"📈 **Total Sales Recorded:** {stats['sales']}")
-                if stats.get("num_for_sale") is not None:
-                    st.write(f"🛒 **Currently For Sale:** {stats['num_for_sale']} listings")
-        else:
-            st.warning("No matching pressings found. Try a simpler search.")
-    else:
-        st.warning("Please complete all required fields.")
+        # Pricing stats
+        stats = get_discogs_price_stats(match["id"])
+        if stats:
+            st.markdown("### 💵 Estimated Value Range")
+            if stats.get("lowest_price"):
+                st.write(f"🔻 **Lowest Sale Price:** ${stats['lowest_price']:.2f}")
+            if stats.get("median_price"):
+                st.write(f"⚖️ **Median Sale Price:** ${stats['median_price']:.2f}")
+            if stats.get("highest_price"):
+                st.write(f"🔺 **Highest Sale Price:** ${stats['highest_price']:.2f}")
+            if stats.get("sales") is not None:
+                st.write(f"📈 **Total Sales Recorded:** {stats['sales']}")
+            if stats.get("num_for_sale") is not None:
+                st.write(f"🛒 **Currently For Sale:** {stats['num_for_sale']} listings")
 
 # Disclaimer
 st.markdown("---")
