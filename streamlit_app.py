@@ -39,12 +39,12 @@ def get_pressing_details(resource_url):
         response = requests.get(resource_url, headers=HEADERS)
         data = response.json()
         labels = ", ".join([label.get("name", "N/A") for label in data.get("labels", [])])
-        catnos = ", ".join([label.get("catno", "N/A") for label in data.get("labels", [])])
+        catnos = ", ".join([label.get("catno", "—") for label in data.get("labels", [])])
         return {
             "country": data.get("country", "N/A"),
             "released": data.get("released_formatted", "N/A"),
             "labels": labels or "N/A",
-            "catalog_numbers": catnos or "N/A"
+            "catalog_numbers": catnos or "—"
         }
     except Exception as e:
         st.error(f"Error fetching pressing details: {e}")
@@ -60,8 +60,8 @@ def get_discogs_price_stats(release_id):
             "lowest_price": stats["lowest_price"].get("value") if stats.get("lowest_price") else None,
             "median_price": stats["median_price"].get("value") if stats.get("median_price") else None,
             "highest_price": stats["highest_price"].get("value") if stats.get("highest_price") else None,
-            "num_for_sale": stats.get("num_for_sale"),
-            "sales": stats.get("sales")
+            "num_for_sale": stats.get("num_for_sale", 0),
+            "sales": stats.get("sales", 0)
         }
     except Exception as e:
         st.error(f"Discogs pricing error: {e}")
@@ -97,9 +97,12 @@ if st.button("🔍 Search Pressings"):
             st.markdown("## 📦 Top Matching Pressings")
             for i, match in enumerate(matches):
                 st.markdown(f"---\n### 🔹 {match['title']} ({match['year']})")
+                st.caption(f"Discogs ID: {match['id']}")  # Debug line
 
                 if match.get("thumb"):
                     st.image(match["thumb"], width=200)
+                else:
+                    st.info("🖼 No cover image available.")
 
                 st.markdown(f"[🔗 View on Discogs]({match['resource_url']})")
 
@@ -114,7 +117,9 @@ if st.button("🔍 Search Pressings"):
 
                 # Pricing
                 stats = get_discogs_price_stats(match["id"])
-                if stats:
+                if stats and (
+                    stats.get("lowest_price") or stats.get("median_price") or stats.get("highest_price")
+                ):
                     st.markdown("#### 💰 Estimated Value")
                     if stats.get("lowest_price"):
                         st.write(f"🔻 **Lowest Sale Price:** ${stats['lowest_price']:.2f}")
@@ -122,12 +127,15 @@ if st.button("🔍 Search Pressings"):
                         st.write(f"⚖️ **Median Sale Price:** ${stats['median_price']:.2f}")
                     if stats.get("highest_price"):
                         st.write(f"🔺 **Highest Sale Price:** ${stats['highest_price']:.2f}")
-                    if stats.get("sales") is not None:
-                        st.write(f"📈 **Total Sales Recorded:** {stats['sales']}")
-                    if stats.get("num_for_sale") is not None:
+                    st.write(f"📈 **Sales Recorded:** {stats['sales']}")
+                    if stats['num_for_sale'] > 0:
                         st.write(f"🛒 **Currently For Sale:** {stats['num_for_sale']} listings")
+                    else:
+                        st.warning("❗ This pressing is not currently for sale.")
+                else:
+                    st.info("💡 No recent pricing data available. This pressing may be rare or hasn’t sold recently.")
         else:
-            st.warning("No matching pressings found. Try a simpler search.")
+            st.warning("No matching pressings found. Try adjusting your artist or title.")
     else:
         st.warning("Please complete all required fields.")
 
