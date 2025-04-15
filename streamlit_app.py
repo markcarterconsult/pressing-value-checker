@@ -123,59 +123,8 @@ notes = st.text_area("Additional Notes (e.g. colored vinyl, promo stamp, misprin
 
 # Button
 if st.button("🔍 Check Value"):
-    if name and email and record_title and artist_name and runout_matrix:
-        match = get_override_by_runout(runout_matrix)
-        if not match:
-            match = search_discogs_by_runout(artist_name, record_title, format_type, runout_matrix, catalog_number)
+    if name and email and record_title_
 
-        if match:
-            st.markdown("## ✅ Match Found")
-            st.markdown(f"**{match['title']} ({match['year']})**")
-            st.markdown(f"[🔗 View on Discogs](https://www.discogs.com/release/{match['id']})")
-
-            details = get_pressing_details(match["resource_url"])
-            if details:
-                if details.get("image"):
-                    st.image(details["image"], width=200)
-                else:
-                    st.info("🖼 No cover image available.")
-
-                st.markdown("### 🏷️ Pressing Details")
-                st.write(f"**Country:** {details['country']}")
-                st.write(f"**Label:** {details['labels']}")
-                st.write(f"**Catalog #:** {details['catalog_numbers']}")
-                st.write(f"**Released:** {details['released']}")
-
-            stats = get_discogs_price_stats(match["id"])
-            if stats:
-                st.markdown("### 💰 Estimated Value")
-                if stats.get("lowest_price"):
-                    st.write(f"🔻 Lowest: ${stats['lowest_price']:.2f}")
-                if stats.get("median_price"):
-                    st.write(f"⚖️ Median: ${stats['median_price']:.2f}")
-                if stats.get("highest_price"):
-                    st.write(f"🔺 Highest: ${stats['highest_price']:.2f}")
-                st.write(f"📈 Sales: {stats['sales']}")
-                st.write(f"🛒 For Sale: {stats['num_for_sale']} listings")
-            else:
-                st.info("No pricing data found.")
-
-            if notes:
-                st.markdown("### 📝 Notes")
-                st.write(notes)
-
-        else:
-            st.warning("❗ No matching pressing found. Try simplifying your search or double-checking the matrix/catalog info.")
-    else:
-        st.warning("Please complete all required fields.")
-
-# Footer
-st.markdown("---")
-st.markdown(
-    "#### ℹ️ Disclaimer\n"
-    "_This tool uses Discogs data to estimate vinyl value. Accuracy depends on condition, rarity, and availability. "
-    "Pricing information is based on publicly listed sales data, and the starting price shown is typically the lowest available on Discogs at the time of lookup._"
-)
 
 
 
