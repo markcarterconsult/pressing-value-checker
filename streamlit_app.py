@@ -5,7 +5,7 @@ import requests
 DISCOGS_TOKEN = "ebpdNwknvWEvijLOpBRFWeIRVGOOJRrAJstkCYPr"
 HEADERS = {"User-Agent": "PressingValueChecker/1.0"}
 
-# Step 1: Check for known override (CSV001RE1)
+# Step 1: Known override
 def get_override_by_runout(runout_matrix):
     code = runout_matrix.strip().lower()
     if code == "csv001re1":
@@ -17,7 +17,7 @@ def get_override_by_runout(runout_matrix):
         }
     return None
 
-# Step 2: Smart Discogs match using runout + catalog number
+# Step 2: Smart match via Discogs
 def search_discogs_by_runout(artist, title, format_type, runout_matrix, catalog_number):
     search_url = "https://api.discogs.com/database/search"
     params = {
@@ -66,7 +66,7 @@ def search_discogs_by_runout(artist, title, format_type, runout_matrix, catalog_
         st.error(f"Error during Discogs runout search: {e}")
         return None
 
-# Step 3: Get pressing details
+# Step 3: Pressing details
 def get_pressing_details(resource_url):
     try:
         r = requests.get(resource_url, headers=HEADERS).json()
@@ -84,7 +84,7 @@ def get_pressing_details(resource_url):
         st.error(f"Pressing details error: {e}")
         return None
 
-# Step 4: Get price stats
+# Step 4: Price info
 def get_discogs_price_stats(release_id):
     try:
         url = f"https://api.discogs.com/marketplace/stats/{release_id}"
@@ -100,12 +100,12 @@ def get_discogs_price_stats(release_id):
         st.error(f"Price fetch error: {e}")
         return None
 
-# Streamlit UI
+# Streamlit App UI
 st.set_page_config(page_title="Is This Vinyl Pressing Valuable?", layout="centered")
 st.title("🎶 Is This Vinyl Pressing Valuable?")
 st.subheader("Get a quick estimate based on your vinyl pressing.")
 
-# Form
+# Form fields
 st.markdown("### 👤 Your Info")
 name = st.text_input("Full Name")
 email = st.text_input("Email Address")
@@ -121,9 +121,84 @@ runout_matrix = st.text_input("Runout Matrix / Etchings")
 catalog_number = st.text_input("Catalog Number (Optional)")
 notes = st.text_area("Additional Notes (e.g. colored vinyl, promo stamp, misprint)", placeholder="Optional...")
 
-# Button
+# Check button
 if st.button("🔍 Check Value"):
-    if name and email and record_title_
+    if name and email and record_title and artist_name and runout_matrix:
+        match = get_override_by_runout(runout_matrix)
+        if not match:
+            match = search_discogs_by_runout(artist_name, record_title, format_type, runout_matrix, catalog_number)
+
+        if match:
+            st.markdown("## ✅ Match Found")
+            st.markdown(f"**{match['title']} ({match['year']})**")
+            st.markdown(f"[🔗 View on Discogs](https://www.discogs.com/release/{match['id']})")
+
+            details = get_pressing_details(match["resource_url"])
+            if details:
+                if details.get("image"):
+                    st.image(details["image"], width=200)
+                else:
+                    st.info("🖼 No cover image available.")
+
+                st.markdown("### 🏷️ Pressing Details")
+                st.write(f"**Country:** {details['country']}")
+                st.write(f"**Label:** {details['labels']}")
+                st.write(f"**Catalog #:** {details['catalog_numbers']}")
+                st.write(f"**Released:** {details['released']}")
+
+            stats = get_discogs_price_stats(match["id"])
+            if stats:
+                st.markdown("### 💰 Estimated Value")
+                if stats.get("lowest_price"):
+                    st.write(f"🔻 Lowest: ${stats['lowest_price']:.2f}")
+                if stats.get("median_price"):
+                    st.write(f"⚖️ Median: ${stats['median_price']:.2f}")
+                if stats.get("highest_price"):
+                    st.write(f"🔺 Highest: ${stats['highest_price']:.2f}")
+                st.write(f"📈 Sales: {stats['sales']}")
+                st.write(f"🛒 For Sale: {stats['num_for_sale']} listings")
+            else:
+                st.info("No pricing data found.")
+
+            if notes:
+                st.markdown("### 📝 Notes")
+                st.write(notes)
+
+            # ✅ Webhook: send to Zapier
+            zapier_url = "https://hooks.zapier.com/hooks/catch/1140911/20jju16/"
+            lead_data = {
+                "name": name,
+                "email": email,
+                "phone": phone,
+                "title": record_title,
+                "artist": artist_name,
+                "format": format_type,
+                "media_condition": vinyl_condition,
+                "sleeve_condition": sleeve_condition,
+                "runout_matrix": runout_matrix,
+                "catalog_number": catalog_number,
+                "notes": notes
+            }
+
+            try:
+                requests.post(zapier_url, json=lead_data)
+                st.success("✅ Your info has been submitted.")
+            except Exception as e:
+                st.warning("⚠️ Could not send info to Zapier.")
+
+        else:
+            st.warning("❗ No matching pressing found. Try simplifying your search or double-checking the matrix/catalog info.")
+    else:
+        st.warning("Please complete all required fields.")
+
+# Footer
+st.markdown("---")
+st.markdown(
+    "#### ℹ️ Disclaimer\n"
+    "_This tool uses Discogs data to estimate vinyl value. Accuracy depends on condition, rarity, and availability. "
+    "Pricing information is based on publicly listed sales data, and the starting price shown is typically the lowest available on Discogs at the time of lookup._"
+)
+
 
 
 
