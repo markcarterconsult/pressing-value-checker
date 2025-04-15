@@ -101,7 +101,7 @@ def get_discogs_price_stats(release_id):
         return None
 
 # Streamlit UI
-st.set_page_config(page_title="Is This Pressing Valuable?", layout="centered")
+st.set_page_config(page_title="Is This Vinyl Pressing Valuable?", layout="centered")
 st.title("🎶 Is This Pressing Valuable?")
 st.subheader("Get a quick estimate based on your vinyl pressing.")
 
