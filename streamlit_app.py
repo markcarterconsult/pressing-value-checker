@@ -173,8 +173,10 @@ if st.button("🔍 Check Value"):
 st.markdown("---")
 st.markdown(
     "#### ℹ️ Disclaimer\n"
-    "_This tool uses Discogs data to estimate vinyl value. Accuracy depends on condition, rarity, and availability._"
+    "_This tool uses Discogs data to estimate vinyl value. Accuracy depends on condition, rarity, and availability. "
+    "Pricing information is based on publicly listed sales data, and the starting price shown is typically the lowest available on Discogs at the time of lookup._"
 )
+
 
 
 
